@@ -215,6 +215,10 @@ pthread_mutex_lock(&sf_mutex);
 	sf.initialized  = 1;
 	sf.exiting      = 0;
 pthread_mutex_unlock(&sf_mutex);
+
+	((void)hashtable_finish);
+	((void)hashtable_get);
+	((void)hashtable_print_stats);
 	return (0);
 }
 
