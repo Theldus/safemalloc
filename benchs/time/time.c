@@ -177,10 +177,10 @@ int main(int argc, char **argv)
 	}
 
 	/* Results. */
-if (test == 1)
-	printf("sf_malloc: %ld\n", malloc_time);
-else
-	printf("malloc: %ld\n", malloc_time);
+	if (test == 1)
+		printf("sf_malloc: %ld\n", malloc_time);
+	else
+		printf("malloc: %ld\n", malloc_time);
 
 	return (0);
 }
