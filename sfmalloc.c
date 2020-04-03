@@ -27,7 +27,13 @@
 /*
  * SafeMalloc main context structure.
  */
-static struct safemalloc sf = {0};
+static struct safemalloc sf = {
+	0, 0, 0, 0, 0, 0,
+#ifndef SFMALLOC_SAVE_SPACE
+	0, 0,
+#endif
+	0, 0, 0, 0
+};
 
 /*
  * Safe Malloc mutex.
