@@ -50,6 +50,20 @@
 	#define realloc_fn  realloc
 	#define free_fn     free
 
+	/*
+	 * Transparent usage.
+	 *
+	 * Enables transparent usage of safemalloc in the project.
+	 * This flag can be enabled either by a define statement
+	 * or by a 'CFLAGS', with -DSF_TRANSPARENT.
+	 */
+#ifdef SF_TRANSPARENT
+	#define malloc  sf_malloc
+	#define calloc  sf_calloc
+	#define realloc sf_realloc
+	#define free    sf_free
+#endif
+
 	/**
 	 * Macros that expands to the real functions
 	 *

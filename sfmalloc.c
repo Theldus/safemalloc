@@ -22,8 +22,12 @@
  * SOFTWARE.
  */
 
+/* Undef SF_TRANSPARENT to ourselves. */
+#undef SF_TRANSPARENT
+
 #include "sfmalloc.h"
 
+/* User signal handlers. */
 #ifndef SF_DISABLE_SIGNAL_HANDLERS
 static void (*sigint)(int) = NULL;
 static void (*sigterm)(int) = NULL;

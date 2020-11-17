@@ -146,6 +146,13 @@ needed to switch the 'original' malloc for safemalloc in an existing project:
 #define realloc sf_realloc
 #define free    sf_free
 
+/*
+ * Or:
+ *
+ * #define SF_TRANSPARENT
+ * #include "sfmalloc.h"
+ */
+
 int main()
 {
     char *p = malloc(...);
@@ -153,6 +160,13 @@ int main()
     free(p);
 }
 ```
+
+Alternatively, you can also use transparently by simply setting (before `#include "sfmalloc.c"`)
+the following: `#define SF_TRANSPARENT.`.
+
+If you want to be _even_ more transparent, set directly on your project's build flags
+(`CFLAGS`, I'd say): `-DSF_TRANSPARENT`.
+
 ### Usage data
 If `VERBOSE_MODE_3` is set, when the program ends, a small summary is displayed,
 with simple information, such as total memory allocated, peak memory, number of
@@ -160,9 +174,8 @@ calls to malloc, calloc...
 
 A code like below:
 ```c
+#define SF_TRANSPARENT
 #include "sfmalloc.h"
-#define malloc sf_malloc
-#define free   sf_free
 
 int main()
 {
