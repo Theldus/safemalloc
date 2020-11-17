@@ -135,7 +135,7 @@ static void sf_sig_handler(int s)
 		sigint(s);
 	if (sigterm != NULL && s == SIGTERM)
 		sigterm(s);
-	exit(0);
+	_exit(0);
 }
 #endif
 
