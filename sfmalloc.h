@@ -256,6 +256,11 @@
 #endif
 
 	/**
+	 * @brief Enable (or not) hashtable status usage
+	 */
+	#define HASHTABLE_ENABLE_STATS 0
+
+	/**
 	 * @brief Hashtable structure.
 	 */
 	struct hashtable

@@ -55,7 +55,9 @@ static int hashtable_finish(struct hashtable **ht);
 static int hashtable_add(struct hashtable **ht, struct address *key);
 static void* hashtable_remove(struct hashtable **ht, uintptr_t address);
 static void* hashtable_get(struct hashtable **ht, uintptr_t key);
+#if HASHTABLE_ENABLE_STATS == 1
 static void hashtable_print_stats(struct hashtable **ht);
+#endif
 
 /* Hash stuffs */
 static int hashtable_cmp_ptr(uintptr_t key1, uintptr_t key2);
@@ -273,7 +275,9 @@ pthread_mutex_unlock(&sf_mutex);
 
 	((void)hashtable_finish);
 	((void)hashtable_get);
+#if HASHTABLE_ENABLE_STATS == 1
 	((void)hashtable_print_stats);
+#endif
 	return (0);
 }
 
@@ -1039,6 +1043,7 @@ static uint64_t hashtable_splitmix64_hash(uintptr_t key, size_t size)
  *
  * @param ht Hashtable pointer.
  */
+#if HASHTABLE_ENABLE_STATS == 1
 static void hashtable_print_stats(struct hashtable **ht)
 {
 	struct hashtable *h;        /* Hashtable.           */
@@ -1128,3 +1133,4 @@ static void hashtable_print_stats(struct hashtable **ht)
 #endif
 	printf("-------------------------------------------------------------\n");
 }
+#endif
