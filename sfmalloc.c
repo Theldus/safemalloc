@@ -24,6 +24,11 @@
 
 #include "sfmalloc.h"
 
+#ifndef SF_DISABLE_SIGNAL_HANDLERS
+static void (*sigint)(int) = NULL;
+static void (*sigterm)(int) = NULL;
+#endif
+
 /*
  * SafeMalloc main context structure.
  */
@@ -95,6 +100,40 @@ pthread_mutex_lock(&sf_mutex);
 pthread_mutex_unlock(&sf_mutex);
 	pthread_mutex_destroy(&sf_mutex);
 }
+
+#ifndef SF_DISABLE_SIGNAL_HANDLERS
+/**
+ * Register a SIGINT.
+ */
+void sf_reg_sigint(void (*handler)(int))
+{
+	sigint = handler;
+}
+
+/**
+ * Register a SIGTERM.
+ */
+void sf_reg_sigterm(void (*handler)(int))
+{
+	sigterm = handler;
+}
+
+/**
+ * SIGINT and SIGTERM handler that calls sf_exit if the process
+ * get interrupted.
+ *
+ * @param s Signal number.
+ */
+static void sf_sig_handler(int s)
+{
+	sf_exit();
+	if (sigint != NULL && s == SIGINT)
+		sigint(s);
+	if (sigterm != NULL && s == SIGTERM)
+		sigterm(s);
+	exit(0);
+}
+#endif
 
 /**
  * Deallocates all the memory allocated at the moment and warns
@@ -198,6 +237,12 @@ pthread_mutex_lock(&sf_mutex);
 			" routine!");
 		exit(EXIT_FAILURE);
 	}
+
+#ifndef SF_DISABLE_SIGNAL_HANDLERS
+	/* Register our signal handlers. */
+	signal(SIGINT, sf_sig_handler);
+	signal(SIGTERM, sf_sig_handler);
+#endif
 
 	/* Set behaviour. */
 	if (verbose_mode < 1 || verbose_mode > 6

@@ -31,6 +31,7 @@
 	#include <unistd.h>
 	#include <pthread.h>
 	#include <math.h>
+	#include <signal.h>
 	#include <sys/types.h>
 
 	/*
@@ -193,6 +194,11 @@
 	/* External functions. */
 	extern void sf_free_all(void);
 	extern int sf_init(int verbose_mode, int on_error);
+
+#ifndef SF_DISABLE_SIGNAL_HANDLERS
+	extern void sf_reg_sigint(void (*handler)(int));
+	extern void sf_reg_sigterm(void (*handler)(int));
+#endif
 
 #ifndef SFMALLOC_SAVE_SPACE
 	extern void *_sf_malloc(size_t size, const char *file, const char *func,

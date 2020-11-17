@@ -103,6 +103,38 @@ Alternatively, safemalloc provides a `sf_free_all()` routine to deallocate all
 memory so far, which can be useful to terminate the program given an error
 condition.
 
+### Handles cases of abrupt termination
+Safemalloc registers signal handlers for `SIGINT` and `SIGTERM` automatically, which
+means that memory leaks, memory release, etc. will continue to function even if
+the program is terminated abruptly, or in cases of programs running in 'infinite
+loop' (such as a server for example).
+
+If your program already uses handlers for `SIGINT` and `SIGTERM`, you can change your
+typical calls to signal for the equivalents of safemalloc: `sf_reg_sigint` and
+`sf_reg_sigterm`, as in:
+
+```c
+void my_handler(int signal)
+{
+    if (signal == SIGINT)
+        do_something();
+    else
+        do_other_something();
+}
+
+sf_reg_sigint(&my_handler);
+sf_reg_sigterm(&myhandler);
+```
+and safemalloc will invoke your routines for you.
+
+If you do not trust safemalloc, or do not want to use this feature, compile with
+`-DSF_DISABLE_SIGNAL_HANDLERS`, and the use of signal handlers is fully disabled.
+
+### Thread safe
+Since safemalloc maintains a data structure of its own, concurrent access to data is a concern,
+so safemalloc is thread-safe (or so it should be) and it is safe to be used in multi-threaded
+environments.
+
 ### Drop-in replacement
 Although more than a simple wrapper, safemalloc offers the same interface as
 the standard libc [m,c,re]alloc/free functions, meaning that only 4 lines are
@@ -193,7 +225,7 @@ The graph below illustrates this scenario, allocating 100 elements at a time
 where the size of each element varies from 50 to 1000 bytes.
 
 <p align="center">
-<img align="center" src="https://i.imgur.com/m1MtjPG.png" 
+<img align="center" src="https://i.imgur.com/m1MtjPG.png"
 alt="Memory Consumption per Element">
 <br>
 </p>
