@@ -50,6 +50,18 @@
 	#define realloc_fn  realloc
 	#define free_fn     free
 
+	/**
+	 * Custom exit error code.
+	 *
+	 * Change if you want to another code other than
+	 * 'EXIT_FAILURE'. Useful if you do not want
+	 * to mix with return codes already used
+	 * by the application.
+	 */
+#ifndef SFMALLOC_EXIT_FAILURE
+	#define SFMALLOC_EXIT_FAILURE (EXIT_FAILURE)
+#endif
+
 	/*
 	 * Transparent usage.
 	 *
@@ -111,12 +123,14 @@
 					fprintf(stderr, "[%s:%d] %s(): ", file, line, func); \
 					fprintf(stderr, __VA_ARGS__); \
 				} \
-				if (sf.on_error & ON_ERROR_ABORT) {\
-					pthread_mutex_unlock(&sf_mutex); \
-					exit(EXIT_FAILURE); \
+				pthread_mutex_unlock(&sf_mutex); \
+				if (sf.on_error & ON_ERROR_ABORT) { \
+					abort(); \
+				} \
+				else if (sf.on_error & ON_ERROR_EXIT) { \
+					exit(SFMALLOC_EXIT_FAILURE); \
 				} \
 				else { \
-					pthread_mutex_unlock(&sf_mutex); \
 					ret_stmt; \
 				} \
 			} \
@@ -129,12 +143,14 @@
 				if (sf.verbose_mode & VERBOSE_MODE_2) { \
 					fprintf(stderr, __VA_ARGS__); \
 				} \
+				pthread_mutex_unlock(&sf_mutex); \
 				if (sf.on_error & ON_ERROR_ABORT) { \
-					pthread_mutex_unlock(&sf_mutex); \
-					exit(EXIT_FAILURE); \
+					abort(); \
+				} \
+				else if (sf.on_error & ON_ERROR_EXIT) { \
+					exit(SFMALLOC_EXIT_FAILURE); \
 				} \
 				else { \
-					pthread_mutex_unlock(&sf_mutex); \
 					ret_stmt; \
 				} \
 			} \
@@ -168,7 +184,8 @@
 	#define VERBOSE_MODE_2  2 /* Only errors messages.       */
 	#define VERBOSE_MODE_3  6 /* Full verbose.               */
 	#define ON_ERROR_ABORT  1 /* Abort if any error.         */
-	#define ON_ERROR_NULL   2 /* Just returns NULL if error. */
+	#define ON_ERROR_EXIT   2 /* Exit if any error.          */
+	#define ON_ERROR_NULL   4 /* Just returns NULL if error. */
 
 	/**
 	 * SafeMalloc main structure

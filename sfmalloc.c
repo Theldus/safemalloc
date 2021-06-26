@@ -210,7 +210,7 @@ pthread_mutex_lock(&sf_mutex);
 			pthread_mutex_unlock(&sf_mutex);
 			fprintf(stderr, "sf_free_all: an error has ocurred while allocating"
 				" hashtable!\n");
-			exit(EXIT_FAILURE);
+			exit(SFMALLOC_EXIT_FAILURE);
 		}
 	}
 
@@ -241,7 +241,7 @@ pthread_mutex_lock(&sf_mutex);
 	{
 		fprintf(stderr, "sf_init: failed while trying to register finish"
 			" routine!");
-		exit(EXIT_FAILURE);
+		exit(SFMALLOC_EXIT_FAILURE);
 	}
 
 #ifndef SF_DISABLE_SIGNAL_HANDLERS
@@ -256,7 +256,7 @@ pthread_mutex_lock(&sf_mutex);
 	{
 		fprintf(stderr, "sf_init: invalid value for verbose_mode and/or"
 			" on_error\nplease check your values!\n");
-		exit(EXIT_FAILURE);
+		exit(SFMALLOC_EXIT_FAILURE);
 	}
 
 	/* Allocate hashtable. */
@@ -264,7 +264,7 @@ pthread_mutex_lock(&sf_mutex);
 	{
 		fprintf(stderr, "sf_init: an error has ocurred while allocating"
 			" hashtable!\n");
-		exit(EXIT_FAILURE);
+		exit(SFMALLOC_EXIT_FAILURE);
 	}
 
 	sf.verbose_mode = verbose_mode;
