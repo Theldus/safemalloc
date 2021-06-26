@@ -56,12 +56,14 @@ Which means that there is **no undefined behavior**:
     + Double free is guaranteed not to happen =).
 
 ### Error behavior levels
-Safemalloc provides 3 levels of verbose mode and 2 levels of 'decision' in case
-of error, thus providing 6 different types of behavior, namely:
+Safemalloc provides 3 levels of verbose mode and 3 levels of 'decision' in case
+of error, thus providing 9 different types of behavior, namely:
 - *`VERBOSE_MODE_1`*: Suppress all safemalloc messages
 - *`VERBOSE_MODE_2`*: Shows only error messages
 - *`VERBOSE_MODE_3`*: Shows everything, error messages + usage data
 - *`ON_ERROR_ABORT`*: If [m,c,re]alloc/free fails, abort the program
+- *`ON_ERROR_EXIT`*: If [m,c,re]alloc/free fails, exit the program with error code
+`SFMALLOC_EXIT_FAILURE` (defaults to  `EXIT_FAILURE`).
 - *`ON_ERROR_NULL`* : If [m,c,re]alloc/free fails, returns NULL as usual, or
   silently returns (`sf_free()` case).
 
