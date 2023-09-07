@@ -28,12 +28,23 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#include <inttypes.h>
+#ifdef SF_BUILD_WINDOWS
+    #include <windows.h>
+#else
 	#include <unistd.h>
 	#include <pthread.h>
+#endif
 	#include <math.h>
 	#include <signal.h>
 	#include <sys/types.h>
 
+#ifdef SF_BUILD_WINDOWS
+    #define SF_MUTEX_LOCK() WaitForSingleObject(ghMutex, INFINITE)
+    #define SF_MUTEX_UNLOCK() ReleaseMutex(ghMutex)
+#else
+    #define SF_MUTEX_LOCK() pthread_mutex_lock(&sf_mutex)
+    #define SF_MUTEX_UNLOCK() pthread_mutex_unlock(&sf_mutex)
+#endif
 	/*
 	 * Define the define below (or before including this header)
 	 * in order to reduce the memory footprint of safemalloc
@@ -118,12 +129,12 @@
 	#define CHECK_ADDR(addr, ret_stmt, ...) \
 		do { \
 			if ((addr) == NULL) { \
-			pthread_mutex_lock(&sf_mutex); \
+			SF_MUTEX_LOCK(); \
 				if (sf.verbose_mode & VERBOSE_MODE_2) { \
 					fprintf(stderr, "[%s:%d] %s(): ", file, line, func); \
 					fprintf(stderr, __VA_ARGS__); \
 				} \
-				pthread_mutex_unlock(&sf_mutex); \
+				SF_MUTEX_UNLOCK(); \
 				if (sf.on_error & ON_ERROR_ABORT) { \
 					abort(); \
 				} \
@@ -139,11 +150,11 @@
 		#define CHECK_ADDR(addr, ret_stmt, ...) \
 		do { \
 			if ((addr) == NULL) { \
-			pthread_mutex_lock(&sf_mutex); \
+			SF_MUTEX_LOCK(); \
 				if (sf.verbose_mode & VERBOSE_MODE_2) { \
 					fprintf(stderr, __VA_ARGS__); \
 				} \
-				pthread_mutex_unlock(&sf_mutex); \
+				SF_MUTEX_UNLOCK(); \
 				if (sf.on_error & ON_ERROR_ABORT) { \
 					abort(); \
 				} \
