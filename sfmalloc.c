@@ -548,6 +548,7 @@ pthread_mutex_lock(&sf_mutex);
 	addr->address = (uintptr_t)(addr+1);
 	addr->next    = NULL;
 
+        size_t origin_size = addr->bytes;
 #ifndef SFMALLOC_SAVE_SPACE
 	addr->bytes = size;
 	addr->file  = file;
@@ -561,7 +562,7 @@ pthread_mutex_lock(&sf_mutex);
 	sf.realloc_calls++;
 #ifndef SFMALLOC_SAVE_SPACE
 	if (sf.current_memory)
-		sf.current_memory -= addr->bytes;
+		sf.current_memory -= origin_size;
 	sf.current_memory += size;
 	if (sf.current_memory > sf.peak_memory)
 		sf.peak_memory = sf.current_memory;
