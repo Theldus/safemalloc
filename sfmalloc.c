@@ -47,7 +47,7 @@ static struct safemalloc sf = {
 /*
  * Safe Malloc mutex.
  */
-#ifdef SF_BUILD_WINDOWS
+#ifdef _WIN32
 static HANDLE ghMutex = NULL;
 #else
 static pthread_mutex_t sf_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -109,7 +109,7 @@ SF_MUTEX_LOCK();
 	}
 SF_MUTEX_UNLOCK();
 
-#ifdef SF_BUILD_WINDOWS
+#ifdef _WIN32
     CloseHandle(ghMutex);
 #else
 	pthread_mutex_destroy(&sf_mutex);
@@ -237,7 +237,7 @@ SF_MUTEX_UNLOCK();
  */
 int sf_init(int verbose_mode, int on_error)
 {
-#ifdef SF_BUILD_WINDOWS
+#ifdef _WIN32
     if (ghMutex == NULL) {
         ghMutex = CreateMutex(
             NULL,              // default security attributes

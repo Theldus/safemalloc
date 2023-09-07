@@ -28,7 +28,7 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#include <inttypes.h>
-#ifdef SF_BUILD_WINDOWS
+#ifdef _WIN32
     #include <windows.h>
 #else
 	#include <unistd.h>
@@ -38,7 +38,7 @@
 	#include <signal.h>
 	#include <sys/types.h>
 
-#ifdef SF_BUILD_WINDOWS
+#ifdef _WIN32
     #define SF_MUTEX_LOCK() WaitForSingleObject(ghMutex, INFINITE)
     #define SF_MUTEX_UNLOCK() ReleaseMutex(ghMutex)
 #else
