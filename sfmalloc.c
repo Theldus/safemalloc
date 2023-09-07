@@ -47,7 +47,11 @@ static struct safemalloc sf = {
 /*
  * Safe Malloc mutex.
  */
+#ifdef SF_BUILD_WINDOWS
+static HANDLE ghMutex = NULL;
+#else
 static pthread_mutex_t sf_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 /* Forward declarations. */
 static int hashtable_init(struct hashtable **ht);
@@ -70,7 +74,7 @@ static uint64_t hashtable_splitmix64_hash(uintptr_t key, size_t size);
  */
 static void sf_exit(void)
 {
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	sf.exiting = 1;
 	if (sf.verbose_mode == VERBOSE_MODE_3)
 	{
@@ -79,9 +83,9 @@ pthread_mutex_lock(&sf_mutex);
 		fprintf(stderr, "SafeMalloc v0.1 - Theldus, verbose mode\n");
 		fprintf(stderr, "---------------------------------------------\n\n");
 	}
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 	sf_free_all();
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	if (sf.verbose_mode == VERBOSE_MODE_3)
 	{
 		fprintf(stderr, "---------------------\n");
@@ -103,8 +107,13 @@ pthread_mutex_lock(&sf_mutex);
 		fprintf(stderr,
 			"=====================================================================\n");
 	}
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
+
+#ifdef SF_BUILD_WINDOWS
+    CloseHandle(ghMutex);
+#else
 	pthread_mutex_destroy(&sf_mutex);
+#endif
 }
 
 #ifndef SF_DISABLE_SIGNAL_HANDLERS
@@ -151,13 +160,13 @@ void sf_free_all(void)
 	struct address *l_ptr; /* List pointer. */
 	size_t i;              /* Loop index.   */
 
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	h = sf.ht;
 
 	/* Invalid array. */
 	if (h == NULL)
 	{
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 		return;
 	}
 
@@ -185,11 +194,11 @@ pthread_mutex_lock(&sf_mutex);
 			if (sf.exiting && sf.verbose_mode & VERBOSE_MODE_2)
 			{
 #ifndef SFMALLOC_SAVE_SPACE
-				fprintf(stderr, "- Address 0x%" PRIx64 " (%zu bytes) not freed!\n"
+				fprintf(stderr, "- Address 0x%p" " (%zu bytes) not freed!\n"
 					"  -> Allocated at [%s:%d] %s()\n\n",
 					l_ptr->address, l_ptr->bytes, l_ptr->file, l_ptr->line, l_ptr->func);
 #else
-				fprintf(stderr, "- Address 0x%" PRIx64 " not freed!\n", l_ptr->address);
+				fprintf(stderr, "- Address 0x%p" " not freed!\n", l_ptr->address);
 #endif
 			}
 
@@ -207,14 +216,14 @@ pthread_mutex_lock(&sf_mutex);
 		/* Allocate a new hashtable again. */
 		if (hashtable_init(&sf.ht) < 0)
 		{
-			pthread_mutex_unlock(&sf_mutex);
+			SF_MUTEX_UNLOCK();
 			fprintf(stderr, "sf_free_all: an error has ocurred while allocating"
 				" hashtable!\n");
 			exit(SFMALLOC_EXIT_FAILURE);
 		}
 	}
 
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 }
 
 /**
@@ -228,11 +237,24 @@ pthread_mutex_unlock(&sf_mutex);
  */
 int sf_init(int verbose_mode, int on_error)
 {
-pthread_mutex_lock(&sf_mutex);
+#ifdef SF_BUILD_WINDOWS
+    if (ghMutex == NULL) {
+        ghMutex = CreateMutex(
+            NULL,              // default security attributes
+            FALSE,             // initially not owned
+            NULL);             // unnamed mutex
+
+        if (ghMutex == NULL) {
+            fprintf(stderr, "CreateMutex error: %d\n", GetLastError());
+            exit(SFMALLOC_EXIT_FAILURE);
+        }
+    }
+#endif
+SF_MUTEX_LOCK();
 	/* Already initialized. */
 	if (sf.initialized)
 	{
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 		return (0);
 	}
 
@@ -271,7 +293,7 @@ pthread_mutex_lock(&sf_mutex);
 	sf.on_error     = on_error;
 	sf.initialized  = 1;
 	sf.exiting      = 0;
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 
 	((void)hashtable_finish);
 	((void)hashtable_get);
@@ -327,7 +349,7 @@ void *_sf_malloc(size_t size
 	addr->line  = line;
 #endif
 
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	/* Fill some infos. */
 	sf.total_allocated += size;
 	sf.malloc_calls++;
@@ -341,14 +363,14 @@ pthread_mutex_lock(&sf_mutex);
 	if (hashtable_add(&sf.ht, addr) < 0)
 	{
 		/* CHECK_ADDR expects that sf_mutex is unlocked. */
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 		free_fn(addr);
 		CHECK_ADDR(NULL, return NULL,
 			"malloc: failed while adding into the list!\n");
 	}
 	else
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 	/* Return address. */
 	return ((void*)(addr+1));
@@ -419,7 +441,7 @@ void *_sf_calloc(size_t nmemb, size_t size
 	addr->line  = line;
 #endif
 
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	/* Fill some infos. */
 	sf.total_allocated += size;
 	sf.calloc_calls++;
@@ -433,14 +455,14 @@ pthread_mutex_lock(&sf_mutex);
 	if (hashtable_add(&sf.ht, addr) < 0)
 	{
 		/* CHECK_ADDR expects that sf_mutex is unlocked. */
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 		free_fn(addr);
 		CHECK_ADDR(NULL, return NULL,
 			"calloc: failed while adding into the list!\n");
 	}
 	else
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 	/* Return address. */
 	return ((void*)(addr+1));
@@ -505,9 +527,9 @@ void *_sf_realloc(void *ptr, size_t size
 	 */
 	if (ptr != NULL)
 	{
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 		addr = hashtable_remove(&sf.ht, (uintptr_t)ptr);
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 
 		CHECK_ADDR(addr, return NULL,
 			"sfrealloc: invalid address: %p!\n"
@@ -526,18 +548,18 @@ pthread_mutex_unlock(&sf_mutex);
 	 */
 	if (ptr != NULL && new_addr == NULL)
 	{
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 		if (hashtable_add(&sf.ht, addr) < 0)
 		{
 			/* CHECK_ADDR expects that sf_mutex is unlocked. */
-			pthread_mutex_unlock(&sf_mutex);
+			SF_MUTEX_UNLOCK();
 
 			free_fn(addr);
 			CHECK_ADDR(NULL, return NULL,
 				"realloc: failed while re-adding into the list!\n");
 		}
 		else
-			pthread_mutex_unlock(&sf_mutex);
+			SF_MUTEX_UNLOCK();
 	}
 	CHECK_ADDR(new_addr, return NULL,
 		"realloc: failed while allocating %zu bytes!\n", size);
@@ -548,7 +570,7 @@ pthread_mutex_lock(&sf_mutex);
 	addr->address = (uintptr_t)(addr+1);
 	addr->next    = NULL;
 
-        size_t origin_size = addr->bytes;
+    size_t origin_size = addr->bytes;
 #ifndef SFMALLOC_SAVE_SPACE
 	addr->bytes = size;
 	addr->file  = file;
@@ -556,7 +578,7 @@ pthread_mutex_lock(&sf_mutex);
 	addr->line  = line;
 #endif
 
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	/* Fill some infos. */
 	sf.total_allocated += size;
 	sf.realloc_calls++;
@@ -572,14 +594,14 @@ pthread_mutex_lock(&sf_mutex);
 	if (hashtable_add(&sf.ht, addr) < 0)
 	{
 		/* CHECK_ADDR expects that sf_mutex is unlocked. */
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 		free_fn(addr);
 		CHECK_ADDR(NULL, return NULL,
 			"realloc: failed while adding into the list!\n");
 	}
 	else
-		pthread_mutex_unlock(&sf_mutex);
+		SF_MUTEX_UNLOCK();
 
 	/* Return address. */
 	return ((void*)(addr+1));
@@ -610,21 +632,21 @@ void _sf_free(void *ptr
 		return;
 
 	/* Attempts to remove the previous address. */
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 	addr = hashtable_remove(&sf.ht, (uintptr_t)ptr);
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 
 	CHECK_ADDR(addr, return,
 		"sffree: invalid address: %p!\nmaybe a double free?\n", ptr);
 
-pthread_mutex_lock(&sf_mutex);
+SF_MUTEX_LOCK();
 
 #ifndef SFMALLOC_SAVE_SPACE
 	sf.current_memory -= addr->bytes;
 #endif
 
 	sf.free_calls++;
-pthread_mutex_unlock(&sf_mutex);
+SF_MUTEX_UNLOCK();
 
 	free_fn(addr);
 }
@@ -1097,7 +1119,7 @@ static void hashtable_print_stats(struct hashtable **ht)
 #if BUCKET_AS_INTEGER
 				printf("%d ", *((int *)l_ptr->value) );
 #else
-				printf("0x%" PRIx64 " ", (uint64_t)l_ptr->address);
+				printf("0x%p" " ", (uint64_t)l_ptr->address);
 #endif
 #endif
 			}
