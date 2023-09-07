@@ -97,13 +97,14 @@ Memory leaks were found during execution, please check below and fix.
   -> Allocated at [foo.c:110] main()
 ...
 ```
-Please note that safemalloc **is not and does not intend to be** a garbage
-collector!!, leaving safemalloc to deallocate all the memory in the end is a
-bad practice and should be avoided.
 
 Alternatively, safemalloc provides a `sf_free_all()` routine to deallocate all
 memory so far, which can be useful to terminate the program given an error
 condition.
+
+> :information_source: **Note:** Please note that safemalloc **is not and does not
+intend to be** a garbage collector!!, leaving safemalloc to deallocate all the memory
+in the end is a **bad practice and should be avoided**.
 
 ### Handles cases of abrupt termination
 Safemalloc registers signal handlers for `SIGINT` and `SIGTERM` automatically, which
